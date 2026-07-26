@@ -1,102 +1,113 @@
 import streamlit as st
 import pandas as pd
-import os
+import sqlite3
 from datetime import datetime
+
+
+# ==============================
+# DATABASE CONNECTION
+# ==============================
+
+def load_attendance():
+
+    try:
+
+        conn = sqlite3.connect(
+            "data/attendance.db"
+        )
+
+        df = pd.read_sql_query(
+            "SELECT * FROM attendance",
+            conn
+        )
+
+        conn.close()
+
+        return df
+
+
+    except Exception:
+
+        return pd.DataFrame()
+
+
+
+# ==============================
+# DASHBOARD
+# ==============================
 
 
 def show():
 
-    st.title("🛡️ GuardianAttend AI Dashboard")
+    st.title("🛡️ GuardianAttend AI")
 
     st.subheader(
-        "AI Powered Smart Attendance Management System"
+        "AI AVENGERS | Smart Attendance Intelligence Dashboard"
     )
+
 
     st.divider()
 
 
-    # ==========================
-    # LOAD ATTENDANCE DATA
-    # ==========================
+    # LOAD DATA
 
-    file = "attendance.csv"
+    df = load_attendance()
 
 
-    if os.path.exists(file) and os.path.getsize(file) > 0:
 
-        df = pd.read_csv(
-            file,
-            header=None,
-            names=[
-                "Name",
-                "Time",
-                "Date"
-            ]
+    if df.empty:
+
+        st.warning(
+            "No attendance records available"
         )
 
-
-    else:
-
-        df = pd.DataFrame(
-            columns=[
-                "Name",
-                "Time",
-                "Date"
-            ]
-        )
+        return
 
 
 
-    # ==========================
-    # CALCULATIONS
-    # ==========================
+    # ==============================
+    # DATA PROCESSING
+    # ==============================
 
 
-    total_students = df["Name"].nunique()
+    total_students = df["name"].nunique()
 
 
 
     today = datetime.now().strftime(
-        "%d-%m-%Y"
+        "%Y-%m-%d"
     )
 
 
+
     today_data = df[
-        df["Date"] == today
+        df["date"] == today
     ]
 
 
 
-    present_today = today_data["Name"].nunique()
+    present_today = today_data["name"].nunique()
 
 
 
-    absent_today = max(
-        total_students - present_today,
-        0
-    )
+    attendance_rate = round(
+        (present_today / total_students) * 100,
+        2
+    ) if total_students else 0
 
 
 
-    if total_students > 0:
-
-        attendance_percentage = round(
-            (present_today / total_students) * 100,
-            2
-        )
-
-    else:
-
-        attendance_percentage = 0
+    total_records = len(df)
 
 
 
-    # ==========================
-    # CARDS
-    # ==========================
+    # ==============================
+    # STAT CARDS
+    # ==============================
 
 
-    col1, col2, col3, col4 = st.columns(4)
+    col1,col2,col3,col4 = st.columns(4)
+
 
 
     with col1:
@@ -107,6 +118,7 @@ def show():
         )
 
 
+
     with col2:
 
         st.metric(
@@ -115,19 +127,21 @@ def show():
         )
 
 
+
     with col3:
 
         st.metric(
-            "❌ Absent Today",
-            absent_today
+            "📌 Total Attendance",
+            total_records
         )
+
 
 
     with col4:
 
         st.metric(
-            "📊 Attendance %",
-            f"{attendance_percentage}%"
+            "📊 Attendance Rate",
+            f"{attendance_rate}%"
         )
 
 
@@ -136,34 +150,30 @@ def show():
 
 
 
-    # ==========================
-    # ATTENDANCE GRAPH
-    # ==========================
+    # ==============================
+    # ANALYTICS
+    # ==============================
 
 
     st.subheader(
-        "📈 Attendance Trend"
+        "📈 Attendance Analytics"
     )
 
 
-    if not df.empty:
+
+    daily = (
+
+        df.groupby("date")
+        ["name"]
+        .count()
+
+    )
 
 
-        graph = (
-            df.groupby("Date")
-            ["Name"]
-            .count()
-        )
 
-
-        st.line_chart(graph)
-
-
-    else:
-
-        st.info(
-            "No attendance data available"
-        )
+    st.line_chart(
+        daily
+    )
 
 
 
@@ -171,27 +181,69 @@ def show():
 
 
 
-    # ==========================
-    # RECENT RECORDS
-    # ==========================
+    # ==============================
+    # TOP STUDENTS
+    # ==============================
 
 
     st.subheader(
-        "📝 Recent Attendance"
+        "🏆 Student Attendance Ranking"
     )
 
 
-    if not df.empty:
 
+    ranking = (
 
-        st.dataframe(
-            df.tail(10),
-            use_container_width=True
+        df.groupby("name")
+        .size()
+        .sort_values(
+            ascending=False
         )
+        .reset_index()
+
+    )
 
 
-    else:
+    ranking.columns = [
 
-        st.warning(
-            "No attendance records found"
-        )
+        "Student",
+
+        "Attendance Count"
+
+    ]
+
+
+
+    st.dataframe(
+        ranking,
+        width="stretch"
+    )
+
+
+
+    st.divider()
+
+
+
+    # ==============================
+    # RECENT ATTENDANCE
+    # ==============================
+
+
+    st.subheader(
+        "📝 Recent Attendance Records"
+    )
+
+
+
+    recent = df.tail(10)
+
+
+
+    st.dataframe(
+
+        recent,
+
+        width="stretch"
+
+    )
