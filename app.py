@@ -45,17 +45,12 @@ st.markdown(
 <style>
 
 .stApp {
-
-background-color:black;
-color:white;
-
+    background-color:black;
+    color:white;
 }
 
-
 section[data-testid="stSidebar"] {
-
-background-color:#050505;
-
+    background-color:#050505;
 }
 
 </style>
@@ -70,6 +65,7 @@ unsafe_allow_html=True
 # ==============================
 
 def show_intro():
+
 
     with open(
         "assets/logo.png",
@@ -101,8 +97,13 @@ color:white;
 width="180">
 
 
-<h1 style="color:red;letter-spacing:10px;">
+<h1 style="
+color:red;
+letter-spacing:10px;
+">
+
 AI AVENGERS
+
 </h1>
 
 
@@ -129,8 +130,9 @@ Smart Attendance Powered by Artificial Intelligence
 
 
 # ==============================
-# INTRO ONCE
+# INTRO ONLY ONCE
 # ==============================
+
 
 if "intro_done" not in st.session_state:
 
@@ -140,6 +142,7 @@ if "intro_done" not in st.session_state:
 
 if not st.session_state.intro_done:
 
+
     show_intro()
 
     time.sleep(3)
@@ -147,6 +150,116 @@ if not st.session_state.intro_done:
     st.session_state.intro_done=True
 
     st.rerun()
+
+
+
+
+# ==============================
+# ROLE BASED MENU
+# ==============================
+
+
+role = st.session_state.role
+
+
+
+if role == "Admin":
+
+
+    menu = [
+
+        "Dashboard",
+
+        "Register Student",
+
+        "Student List",
+
+        "AI Attendance",
+
+        "Analytics",
+
+        "Reports",
+
+        "User Management",
+
+        "Fees Management"
+
+    ]
+
+
+    icons = [
+
+        "speedometer",
+
+        "person-plus",
+
+        "people",
+
+        "camera",
+
+        "graph-up",
+
+        "file-text",
+
+        "person-gear",
+
+        "cash-coin"
+
+    ]
+
+
+
+elif role == "Staff":
+
+
+    menu = [
+
+        "Dashboard",
+
+        "AI Attendance",
+
+        "Reports"
+
+    ]
+
+
+    icons = [
+
+        "speedometer",
+
+        "camera",
+
+        "file-text"
+
+    ]
+
+
+
+else:
+
+
+    menu = [
+
+        "My Attendance",
+
+        "My Report",
+
+        "My Fees"
+
+    ]
+
+
+    icons = [
+
+        "calendar-check",
+
+        "file-text",
+
+        "cash"
+
+    ]
+
+
 
 
 
@@ -171,15 +284,19 @@ with st.sidebar:
 
 ## GuardianAttend AI
 
+
 👤 User:
+
 {st.session_state.username}
 
 
-Role:
-{st.session_state.role}
+🔐 Role:
+
+{role}
 
 """
     )
+
 
 
     if st.button(
@@ -197,44 +314,13 @@ Role:
 
         menu_title=None,
 
-        options=[
+        options=menu,
 
-            "Dashboard",
-
-            "Register Student",
-
-            "Student List",
-
-            "AI Attendance",
-
-            "Analytics",
-
-            "Reports"
-
-        ],
-
-
-        icons=[
-
-            "speedometer",
-
-            "person-plus",
-
-            "people",
-
-            "camera",
-
-            "graph-up",
-
-            "file-text"
-
-        ],
-
+        icons=icons,
 
         default_index=0
 
     )
-
 
 
 
@@ -279,5 +365,40 @@ elif selected=="Reports":
     from components.reports import show
 
 
+
+elif selected=="User Management":
+
+    from components.users import show
+
+
+
+elif selected=="Fees Management":
+
+    from components.fees import show
+
+
+
+elif selected=="My Attendance":
+
+    from components.student_portal import show
+
+
+
+elif selected=="My Report":
+
+    from components.student_report import show
+
+
+
+elif selected=="My Fees":
+
+    from components.student_fees import show
+
+
+
+
+# ==============================
+# RUN PAGE
+# ==============================
 
 show()
