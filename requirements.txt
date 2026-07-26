@@ -1,4 +1,5 @@
 streamlit
+streamlit-option-menu
 opencv-contrib-python
 pandas
 numpy
