@@ -4,7 +4,6 @@ import sqlite3
 from datetime import datetime
 
 
-
 DATABASE = "data/attendance.db"
 
 
@@ -15,11 +14,9 @@ DATABASE = "data/attendance.db"
 
 def save_attendance(name, confidence):
 
-
     conn = sqlite3.connect(DATABASE)
 
     cursor = conn.cursor()
-
 
 
     now = datetime.now()
@@ -30,64 +27,52 @@ def save_attendance(name, confidence):
 
 
 
-    # Prevent duplicate attendance
+    cursor.execute(
+        """
+        SELECT id FROM attendance
+        WHERE name=? AND date=?
+        """,
+        (name,date)
+    )
+
+
+    exists = cursor.fetchone()
+
+
+
+    if exists:
+
+        conn.close()
+
+        return False
+
+
 
     cursor.execute(
         """
-        SELECT * FROM attendance
-        WHERE name=? AND date=?
+        INSERT INTO attendance
+        (name,date,time,status,confidence)
+
+        VALUES(?,?,?,?,?)
+
         """,
+
         (
             name,
-            date
+            date,
+            time,
+            "Present",
+            confidence
         )
     )
 
 
-    result = cursor.fetchone()
-
-
-
-    if result is None:
-
-
-        cursor.execute(
-
-            """
-            INSERT INTO attendance
-            (name,date,time,status,confidence)
-
-            VALUES(?,?,?,?,?)
-
-            """,
-
-            (
-                name,
-                date,
-                time,
-                "Present",
-                confidence
-            )
-
-        )
-
-
-        conn.commit()
-
-        saved=True
-
-
-    else:
-
-        saved=False
-
-
+    conn.commit()
 
     conn.close()
 
 
-    return saved
-
+    return True
 
 
 
@@ -96,23 +81,25 @@ def save_attendance(name, confidence):
 # ATTENDANCE PAGE
 # ==========================
 
-
 def show():
 
 
     st.title(
-        "📷 AI Face Recognition Attendance"
+        "🤖 AI Face Recognition Attendance"
     )
 
 
-    st.write(
-        "GuardianAttend AI | AI AVENGERS"
+    st.subheader(
+        "🛡️ AI AVENGERS | GuardianAttend AI"
     )
+
+
+    st.divider()
 
 
 
     start = st.button(
-        "Start Camera"
+        "📷 Start AI Camera"
     )
 
 
@@ -123,7 +110,6 @@ def show():
         recognizer = cv2.face.LBPHFaceRecognizer_create()
 
 
-
         recognizer.read(
             "trainer.yml"
         )
@@ -131,14 +117,15 @@ def show():
 
 
         detector = cv2.CascadeClassifier(
+
             "haarcascade_frontalface_default.xml"
+
         )
 
 
 
         with open(
-            "names.txt",
-            "r"
+            "names.txt"
         ) as f:
 
             names = f.read().splitlines()
@@ -149,25 +136,33 @@ def show():
 
 
 
-        frame_window = st.image([])
+        frame_box = st.image([])
 
 
 
-        marked=False
+        status_box = st.empty()
+
+
+
+        confidence_box = st.empty()
+
+
+
+        marked_people = set()
 
 
 
         while True:
 
 
-            ret, frame = cap.read()
+            ret,frame = cap.read()
 
 
 
             if not ret:
 
                 st.error(
-                    "Camera not working"
+                    "Camera not detected"
                 )
 
                 break
@@ -175,16 +170,23 @@ def show():
 
 
             gray = cv2.cvtColor(
+
                 frame,
+
                 cv2.COLOR_BGR2GRAY
+
             )
 
 
 
             faces = detector.detectMultiScale(
+
                 gray,
+
                 1.3,
+
                 5
+
             )
 
 
@@ -192,16 +194,22 @@ def show():
             for x,y,w,h in faces:
 
 
-                id, confidence = recognizer.predict(
 
-                    gray[y:y+h, x:x+w]
+                face = gray[y:y+h,x:x+w]
+
+
+
+                id,confidence = recognizer.predict(
+
+                    face
 
                 )
 
 
 
                 accuracy = round(
-                    100-confidence
+                    100-confidence,
+                    2
                 )
 
 
@@ -213,27 +221,26 @@ def show():
 
 
 
-                    cv2.putText(
+                    color = (0,255,0)
 
-                        frame,
 
-                        f"{name} {accuracy}%",
 
-                        (x,y-10),
+                    status_box.success(
 
-                        cv2.FONT_HERSHEY_SIMPLEX,
+                        f"✅ Recognized: {name}"
 
-                        1,
+                    )
 
-                        (0,255,0),
 
-                        2
+                    confidence_box.info(
+
+                        f"AI Confidence: {accuracy}%"
 
                     )
 
 
 
-                    if not marked:
+                    if name not in marked_people:
 
 
                         saved = save_attendance(
@@ -248,44 +255,50 @@ def show():
 
                         if saved:
 
-                            st.success(
 
-                                f"✅ Attendance marked: {name}"
+                            st.toast(
+
+                                f"Attendance marked: {name}"
 
                             )
 
 
                         else:
 
-                            st.info(
 
-                                f"Already marked today: {name}"
+                            st.toast(
+
+                                f"{name} already present"
 
                             )
 
 
-                        marked=True
+
+                        marked_people.add(name)
+
 
 
 
                 else:
 
 
-                    cv2.putText(
+                    name="Unknown"
 
-                        frame,
+                    color=(0,0,255)
 
-                        "Unknown",
 
-                        (x,y-10),
 
-                        cv2.FONT_HERSHEY_SIMPLEX,
+                    status_box.error(
 
-                        1,
+                        "⚠️ Unknown Person Detected"
 
-                        (0,0,255),
+                    )
 
-                        2
+
+
+                    confidence_box.warning(
+
+                        f"Confidence: {accuracy}%"
 
                     )
 
@@ -300,7 +313,7 @@ def show():
 
                     (x+w,y+h),
 
-                    (255,0,0),
+                    color,
 
                     2
 
@@ -308,8 +321,27 @@ def show():
 
 
 
+                cv2.putText(
 
-            rgb = cv2.cvtColor(
+                    frame,
+
+                    f"{name} {accuracy}%",
+
+                    (x,y-10),
+
+                    cv2.FONT_HERSHEY_SIMPLEX,
+
+                    0.8,
+
+                    color,
+
+                    2
+
+                )
+
+
+
+            rgb=cv2.cvtColor(
 
                 frame,
 
@@ -318,14 +350,14 @@ def show():
             )
 
 
-            frame_window.image(rgb)
 
+            frame_box.image(
 
+                rgb,
 
-            if marked:
+                width="stretch"
 
-                break
-
+            )
 
 
 
