@@ -1,10 +1,9 @@
 import streamlit as st
-import streamlit.components.v1 as components
 import base64
 import time
-
 from streamlit_option_menu import option_menu
 
+from components.login import show_login
 
 
 # ==============================
@@ -20,12 +19,62 @@ st.set_page_config(
 
 
 # ==============================
+# LOGIN SECURITY
+# ==============================
+
+if "logged_in" not in st.session_state:
+
+    st.session_state.logged_in = False
+
+
+
+if not st.session_state.logged_in:
+
+    show_login()
+
+    st.stop()
+
+
+
+# ==============================
+# CUSTOM CSS
+# ==============================
+
+st.markdown(
+"""
+<style>
+
+.stApp {
+
+background-color:black;
+color:white;
+
+}
+
+
+section[data-testid="stSidebar"] {
+
+background-color:#050505;
+
+}
+
+</style>
+""",
+unsafe_allow_html=True
+)
+
+
+
+# ==============================
 # INTRO ANIMATION
 # ==============================
 
 def show_intro():
 
-    with open("assets/logo.png","rb") as f:
+    with open(
+        "assets/logo.png",
+        "rb"
+    ) as f:
 
         logo = base64.b64encode(
             f.read()
@@ -33,302 +82,55 @@ def show_intro():
 
 
 
-    components.html(
-
-f"""
+    html=f"""
 
 <html>
 
-<head>
-
-<style>
-
-
-html,body{{
-
-margin:0;
-
-padding:0;
-
+<body style="
 background:black;
-
-width:100%;
-
-height:100%;
-
-overflow:hidden;
-
-}}
-
-
-
-.intro{{
-
 height:100vh;
-
-width:100vw;
-
-background:black;
-
 display:flex;
-
 justify-content:center;
-
 align-items:center;
-
 flex-direction:column;
-
-}}
-
-
-
-.logo{{
-
-width:180px;
-
-animation:
-
-zoom 2s ease,
-
-glow 1.5s infinite alternate;
-
-}}
-
-
-
-.company{{
-
-margin-top:25px;
-
-font-size:32px;
-
-font-weight:800;
-
-font-family:Arial;
-
-letter-spacing:10px;
-
-color:#ff3030;
-
-opacity:0;
-
-animation:
-
-fade 2s ease forwards;
-
-}}
-
-
-
-.product{{
-
-margin-top:20px;
-
-font-size:55px;
-
-font-weight:900;
-
-font-family:Arial;
-
-letter-spacing:5px;
-
 color:white;
+">
 
-opacity:0;
 
-animation:
+<img src="data:image/png;base64,{logo}"
+width="180">
 
-product 2s ease 1s forwards;
 
-}}
-
-
-
-.tagline{{
-
-margin-top:20px;
-
-font-size:22px;
-
-font-family:Arial;
-
-color:#cccccc;
-
-opacity:0;
-
-animation:
-
-fade 2s ease 2s forwards;
-
-}}
-
-
-
-
-@keyframes zoom{{
-
-
-0%{{
-
-transform:scale(0);
-
-opacity:0;
-
-}}
-
-
-100%{{
-
-transform:scale(1);
-
-opacity:1;
-
-}}
-
-
-}}
-
-
-
-@keyframes glow{{
-
-
-from{{
-
-filter:drop-shadow(0 0 5px red);
-
-}}
-
-
-to{{
-
-filter:drop-shadow(0 0 45px red);
-
-}}
-
-
-}}
-
-
-
-@keyframes fade{{
-
-
-from{{
-
-opacity:0;
-
-transform:translateY(-30px);
-
-}}
-
-
-to{{
-
-opacity:1;
-
-transform:translateY(0);
-
-}}
-
-
-}}
-
-
-
-@keyframes product{{
-
-
-from{{
-
-opacity:0;
-
-letter-spacing:30px;
-
-}}
-
-
-to{{
-
-opacity:1;
-
-letter-spacing:5px;
-
-}}
-
-
-}}
-
-
-
-</style>
-
-
-</head>
-
-
-<body>
-
-
-<div class="intro">
-
-
-<img
-
-class="logo"
-
-src="data:image/png;base64,{logo}">
-
-
-
-<div class="company">
-
+<h1 style="color:red;letter-spacing:10px;">
 AI AVENGERS
-
-</div>
-
+</h1>
 
 
-<div class="product">
-
+<h2>
 GuardianAttend AI
-
-</div>
-
+</h2>
 
 
-<div class="tagline">
-
+<p>
 Smart Attendance Powered by Artificial Intelligence
-
-</div>
-
-
-
-</div>
+</p>
 
 
 </body>
 
-
 </html>
 
-""",
+"""
 
-height=900,
 
-width=1600
-
-)
-
+    st.html(html)
 
 
 
 
 # ==============================
-# PLAY INTRO ONCE
+# INTRO ONCE
 # ==============================
-
 
 if "intro_done" not in st.session_state:
 
@@ -338,17 +140,13 @@ if "intro_done" not in st.session_state:
 
 if not st.session_state.intro_done:
 
-
     show_intro()
 
-    time.sleep(5)
-
+    time.sleep(3)
 
     st.session_state.intro_done=True
 
-
     st.rerun()
-
 
 
 
@@ -367,14 +165,31 @@ with st.sidebar:
 
 
     st.markdown(
-        """
-        # AI AVENGERS
-        
-        ### GuardianAttend AI
-        
-        Smart Attendance System
-        """
+    f"""
+
+# 🛡️ AI AVENGERS
+
+## GuardianAttend AI
+
+👤 User:
+{st.session_state.username}
+
+
+Role:
+{st.session_state.role}
+
+"""
     )
+
+
+    if st.button(
+        "🚪 Logout"
+    ):
+
+
+        st.session_state.logged_in=False
+
+        st.rerun()
 
 
 
@@ -462,7 +277,6 @@ elif selected=="Analytics":
 elif selected=="Reports":
 
     from components.reports import show
-
 
 
 
