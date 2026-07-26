@@ -1,255 +1,51 @@
 import sqlite3
+import os
+
+DATABASE = "data/attendance.db"
 
 
-DATABASE = "guardianattend.db"
+def init_database():
 
-
-
-# ==========================
-# CREATE DATABASE
-# ==========================
-
-def create_database():
+    os.makedirs("data", exist_ok=True)
 
     conn = sqlite3.connect(DATABASE)
 
     cursor = conn.cursor()
 
-
-
-    # STUDENTS TABLE
-
     cursor.execute("""
-
-    CREATE TABLE IF NOT EXISTS students (
-
+    CREATE TABLE IF NOT EXISTS users(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-        name TEXT NOT NULL,
-
-        roll_no TEXT,
-
-        department TEXT,
-
-        image_path TEXT
-
+        username TEXT UNIQUE,
+        password TEXT,
+        role TEXT
     )
-
     """)
 
 
-
-
-    # ATTENDANCE TABLE
-
     cursor.execute("""
-
-    CREATE TABLE IF NOT EXISTS attendance (
-
+    CREATE TABLE IF NOT EXISTS fees(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-        student_id INTEGER,
-
-        name TEXT,
-
-        date TEXT,
-
-        time TEXT,
-
-        status TEXT,
-
-        confidence REAL,
-
-
-        FOREIGN KEY(student_id)
-
-        REFERENCES students(id)
-
+        student_name TEXT,
+        total_amount REAL,
+        paid_amount REAL,
+        pending_amount REAL,
+        payment_status TEXT,
+        last_payment_date TEXT
     )
-
     """)
 
 
-
-    conn.commit()
-
-    conn.close()
-
-
-
-
-
-# ==========================
-# INSERT STUDENT
-# ==========================
-
-def add_student(
-        name,
-        roll_no,
-        department,
-        image_path
-):
-
-
-    conn = sqlite3.connect(DATABASE)
-
-    cursor = conn.cursor()
-
-
-
-    cursor.execute(
-
-    """
-
-    INSERT INTO students
-
-    (name,roll_no,department,image_path)
-
-    VALUES (?,?,?,?)
-
-    """,
-
-    (
-        name,
-        roll_no,
-        department,
-        image_path
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS payments(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_name TEXT,
+        amount REAL,
+        transaction_id TEXT,
+        payment_date TEXT,
+        status TEXT
     )
-
-
-    )
+    """)
 
 
     conn.commit()
-
     conn.close()
-
-
-
-
-
-
-# ==========================
-# ADD ATTENDANCE
-# ==========================
-
-def add_attendance(
-
-        student_id,
-
-        name,
-
-        date,
-
-        time,
-
-        status,
-
-        confidence
-
-):
-
-
-    conn = sqlite3.connect(DATABASE)
-
-    cursor = conn.cursor()
-
-
-
-    cursor.execute(
-
-    """
-
-    INSERT INTO attendance
-
-    (
-
-    student_id,
-
-    name,
-
-    date,
-
-    time,
-
-    status,
-
-    confidence
-
-    )
-
-    VALUES (?,?,?,?,?,?)
-
-    """,
-
-    (
-
-        student_id,
-
-        name,
-
-        date,
-
-        time,
-
-        status,
-
-        confidence
-
-    )
-
-
-    )
-
-
-    conn.commit()
-
-    conn.close()
-
-
-
-
-
-# ==========================
-# GET DATA
-# ==========================
-
-def get_students():
-
-
-    conn = sqlite3.connect(DATABASE)
-
-
-    data = conn.execute(
-
-        "SELECT * FROM students"
-
-    ).fetchall()
-
-
-    conn.close()
-
-
-    return data
-
-
-
-
-
-def get_attendance():
-
-
-    conn = sqlite3.connect(DATABASE)
-
-
-    data = conn.execute(
-
-        "SELECT * FROM attendance"
-
-    ).fetchall()
-
-
-    conn.close()
-
-
-    return data

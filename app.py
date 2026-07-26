@@ -3,7 +3,16 @@ import base64
 import time
 from streamlit_option_menu import option_menu
 
+from database import init_database
 from components.login import show_login
+
+
+# ==============================
+# INITIALIZE DATABASE
+# ==============================
+
+init_database()
+
 
 
 # ==============================
@@ -66,7 +75,6 @@ unsafe_allow_html=True
 
 def show_intro():
 
-
     with open(
         "assets/logo.png",
         "rb"
@@ -101,9 +109,7 @@ width="180">
 color:red;
 letter-spacing:10px;
 ">
-
 AI AVENGERS
-
 </h1>
 
 
@@ -133,7 +139,6 @@ Smart Attendance Powered by Artificial Intelligence
 # INTRO ONLY ONCE
 # ==============================
 
-
 if "intro_done" not in st.session_state:
 
     st.session_state.intro_done=False
@@ -141,7 +146,6 @@ if "intro_done" not in st.session_state:
 
 
 if not st.session_state.intro_done:
-
 
     show_intro()
 
@@ -158,13 +162,11 @@ if not st.session_state.intro_done:
 # ROLE BASED MENU
 # ==============================
 
-
 role = st.session_state.role
 
 
 
 if role == "Admin":
-
 
     menu = [
 
@@ -211,7 +213,6 @@ if role == "Admin":
 
 elif role == "Staff":
 
-
     menu = [
 
         "Dashboard",
@@ -237,7 +238,6 @@ elif role == "Staff":
 
 else:
 
-
     menu = [
 
         "My Attendance",
@@ -262,11 +262,9 @@ else:
 
 
 
-
 # ==============================
 # SIDEBAR
 # ==============================
-
 
 with st.sidebar:
 
@@ -302,7 +300,6 @@ with st.sidebar:
     if st.button(
         "🚪 Logout"
     ):
-
 
         st.session_state.logged_in=False
 
