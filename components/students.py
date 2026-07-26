@@ -1,39 +1,100 @@
 import streamlit as st
 import sqlite3
 import pandas as pd
+import os
 
 
-def show():
+# ==============================
+# DATABASE
+# ==============================
 
-    st.title("👥 Student Directory")
-
-    st.subheader(
-        "GuardianAttend AI | Registered Students"
-    )
-
-    st.divider()
-
-
-    # Database connection
+def load_students():
 
     conn = sqlite3.connect(
         "data/attendance.db"
     )
-
 
     students = pd.read_sql_query(
         "SELECT * FROM students",
         conn
     )
 
-
     conn.close()
 
+    return students
 
 
-    # Total students
 
-    col1, col2 = st.columns(2)
+# ==============================
+# ATTENDANCE COUNT
+# ==============================
+
+def get_attendance(name):
+
+    try:
+
+        conn = sqlite3.connect(
+            "data/attendance.db"
+        )
+
+
+        result = pd.read_sql_query(
+            """
+            SELECT COUNT(*) as total
+            FROM attendance
+            WHERE name=?
+            """,
+            conn,
+            params=(name,)
+        )
+
+
+        conn.close()
+
+
+        return result["total"][0]
+
+
+    except:
+
+        return 0
+
+
+
+
+# ==============================
+# STUDENT DIRECTORY
+# ==============================
+
+
+def show():
+
+
+    st.title(
+        "👨‍🎓 Student Management"
+    )
+
+
+    st.subheader(
+        "🛡️ AI AVENGERS | GuardianAttend AI"
+    )
+
+
+    st.divider()
+
+
+
+    students = load_students()
+
+
+
+    # ==============================
+    # TOP CARDS
+    # ==============================
+
+
+    col1,col2,col3 = st.columns(3)
+
 
 
     with col1:
@@ -44,12 +105,23 @@ def show():
         )
 
 
+
     with col2:
 
         st.metric(
-            "🛡️ Database",
+            "🤖 AI Models",
+            len(students)
+        )
+
+
+
+    with col3:
+
+        st.metric(
+            "🗄️ Database",
             "Connected"
         )
+
 
 
     st.divider()
@@ -58,89 +130,151 @@ def show():
 
     if students.empty:
 
+
         st.warning(
-            "No students registered yet"
+            "No students registered"
+        )
+
+        return
+
+
+
+
+    # ==============================
+    # SEARCH
+    # ==============================
+
+
+    search = st.text_input(
+        "🔍 Search Student"
+    )
+
+
+
+    if search:
+
+
+        students = students[
+            students["name"]
+            .str.contains(
+                search,
+                case=False,
+                na=False
+            )
+        ]
+
+
+
+    st.subheader(
+        "📋 Student Profiles"
+    )
+
+
+
+    # ==============================
+    # PROFILE CARDS
+    # ==============================
+
+
+    for _,row in students.iterrows():
+
+
+
+        name = row["name"]
+
+
+
+        attendance = get_attendance(
+            name
         )
 
 
-    else:
+
+        with st.container():
 
 
-        # Search
-
-        search = st.text_input(
-            "🔍 Search Student"
-        )
+            col1,col2,col3 = st.columns(
+                [1,2,1]
+            )
 
 
-        if search:
 
-            students = students[
-                students["name"]
-                .str.contains(
-                    search,
-                    case=False
+            # PHOTO
+
+            with col1:
+
+
+                folder = name.replace(
+                    " ",
+                    "_"
                 )
-            ]
 
 
-
-        st.subheader(
-            "Student Profiles"
-        )
-
-
-        for index,row in students.iterrows():
-
-
-            with st.container():
-
-                col1,col2 = st.columns(
-                    [1,3]
+                image = (
+                    f"images/{folder}/1.jpg"
                 )
 
 
-                with col1:
+                if os.path.exists(image):
 
-                    folder_name = row["name"].replace(
-                        " ",
-                        "_"
+                    st.image(
+                        image,
+                        width=120
+                    )
+
+                else:
+
+                    st.info(
+                        "No Photo"
                     )
 
 
-                    image_path = (
-                        f"images/{folder_name}/0.jpg"
+
+            # DETAILS
+
+            with col2:
+
+
+                st.markdown(
+                    f"""
+
+### 🎓 {name}
+
+
+**Roll Number:** {row['roll']}
+
+
+**Branch:** {row['branch']}
+
+
+**Face Recognition:** ✅ Active
+
+
+**Attendance Count:** {attendance}
+
+
+"""
+                )
+
+
+
+            # STATUS
+
+            with col3:
+
+
+                if attendance > 0:
+
+                    st.success(
+                        "ACTIVE"
+                    )
+
+                else:
+
+                    st.warning(
+                        "NEW"
                     )
 
 
-                    try:
 
-                        st.image(
-                            image_path,
-                            width=120
-                        )
-
-                    except:
-
-                        st.write(
-                            "No Image"
-                        )
-
-
-                with col2:
-
-                    st.markdown(
-                        f"""
-                        ### 🎓 {row['name']}
-
-                        **Roll No:** {row['roll']}
-
-                        **Branch:** {row['branch']}
-
-                        **AI Face Model:** Registered ✅
-
-                        """
-                    )
-
-
-                st.divider()
+            st.divider()
